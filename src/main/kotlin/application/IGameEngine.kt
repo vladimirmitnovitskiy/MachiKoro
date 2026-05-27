@@ -3,7 +3,7 @@ package application
 import domain.*
 import kotlinx.coroutines.flow.StateFlow
 
-// Состояние игры (будет автоматически обновлять GUI во 2-м задании)
+// Состояние игры
 data class GameState(
     val activePlayer: Player,
     val players: List<Player>,
@@ -18,5 +18,6 @@ interface IGameEngine {
     fun rollDice()
     fun buyEstablishment(card: Establishment)
     fun buildLandmark(landmark: Landmark)
+    fun passTurn()
     fun abortGame()
 }

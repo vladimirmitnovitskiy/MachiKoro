@@ -23,7 +23,7 @@ class Establishment(
     val strategy: IncomeStrategy      // Паттерн Стратегия для эффекта карты
 ) : Card(name, cost)
 
-// Достопримечательность (Цель игры)
+// Достопримечательность
 class Landmark(
     name: String,
     cost: Int,

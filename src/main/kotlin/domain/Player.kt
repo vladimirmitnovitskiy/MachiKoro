@@ -25,6 +25,6 @@ class Player(
 
     // Проверка победы: если построено 4 достопримечательности
     fun hasWon(): Boolean {
-        return landmarks.size >= 4
+        return landmarks.count { it.isBuilt } >= 4
     }
 }

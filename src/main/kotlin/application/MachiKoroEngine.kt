@@ -8,7 +8,7 @@ import kotlinx.coroutines.flow.asStateFlow
 class MachiKoroEngine(
     private val players: List<Player>,
     private val market: Market,
-    private val dice: Dice = RandomDice() // <--- Добавили кубик (по умолчанию случайный)
+    private val dice: Dice = RandomDice()
 ) : IGameEngine {
 
     private var currentPlayerIndex = 0
@@ -29,8 +29,6 @@ class MachiKoroEngine(
         val roll = dice.roll()
         val activePlayer = players[currentPlayerIndex]
         val context = TurnContext(roll, activePlayer, players)
-
-        println("\n🎲 Игрок ${activePlayer.name} бросил кубик: Выпало $roll!")
 
         println("\n🎲 Игрок ${activePlayer.name} бросил кубик: Выпало $roll!")
 
@@ -80,11 +78,51 @@ class MachiKoroEngine(
     }
 
     override fun buildLandmark(landmark: Landmark) {
-        // Эту логику допишем чуть позже, когда добавим сами Достопримечательности
+        val activePlayer = players[currentPlayerIndex]
+
+        // Проверяем, есть ли уже такая постройка
+        if (activePlayer.landmarks.any { it.name == landmark.name && it.isBuilt }) {
+            println("❌ Достопримечательность ${landmark.name} уже построена!")
+            return
+        }
+
+        // Проверяем деньги
+        if (activePlayer.balance < landmark.cost) {
+            println("❌ Недостаточно монет для постройки ${landmark.name}!")
+            return
+        }
+
+        // Строим
+        activePlayer.deductCoins(landmark.cost)
+        val targetLandmark = activePlayer.landmarks.find { it.name == landmark.name }
+
+        if (targetLandmark != null) {
+            targetLandmark.isBuilt = true
+        } else {
+            // Если её не было в списке, добавляем построенную
+            landmark.isBuilt = true
+            activePlayer.landmarks.add(landmark)
+        }
+
+        println("🎉 УРА! Игрок ${activePlayer.name} построил достопримечательность: ${landmark.name}!")
+
+        // Проверка условия победы
+        if (activePlayer.hasWon()) {
+            println("🏆 ИГРА ОКОНЧЕНА! Победитель: ${activePlayer.name}! 🏆")
+            updateState { it.copy(winner = activePlayer) }
+        } else {
+            nextTurn()
+        }
     }
 
     override fun abortGame() {
         println("Игра прервана.")
+    }
+
+    override fun passTurn() {
+        val activePlayer = players[currentPlayerIndex]
+        println("👉 Игрок ${activePlayer.name} решил ничего не покупать и передает ход.")
+        nextTurn()
     }
 
     // Вспомогательный метод передачи хода

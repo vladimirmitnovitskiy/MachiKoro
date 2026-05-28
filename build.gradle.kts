@@ -33,3 +33,10 @@ kotlin {
 tasks.test {
     useJUnitPlatform()
 }
+
+compose.desktop {
+    application {
+        // Указываем путь до файла, в котором находится наша fun main()
+        mainClass = "presentation.DesktopAppKt"
+    }
+}

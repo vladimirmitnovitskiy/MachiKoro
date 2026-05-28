@@ -57,58 +57,26 @@ class MachiKoroEngine(
     override fun buyEstablishment(card: Establishment) {
         val activePlayer = players[currentPlayerIndex]
 
-        // Валидация покупки
-        if (!market.availableCards.contains(card)) {
-            println("❌ Этой карты нет на рынке!")
-            return
-        }
-        if (activePlayer.balance < card.cost) {
-            println("❌ Недостаточно монет! У ${activePlayer.name} только ${activePlayer.balance}, а нужно ${card.cost}")
-            return
-        }
+        if (!market.availableCards.contains(card)) return
+        if (activePlayer.balance < card.cost) return
 
-        // Покупка
-        activePlayer.deductCoins(card.cost)
-        activePlayer.establishments.add(card)
+        activePlayer.buyEstablishment(card)
         market.removeCard(card)
 
-        println("✅ ${activePlayer.name} купил(а) предприятие: ${card.name}")
-
-        nextTurn() // Передаем ход
+        nextTurn()
     }
 
     override fun buildLandmark(landmark: Landmark) {
         val activePlayer = players[currentPlayerIndex]
 
-        // Проверяем, есть ли уже такая постройка
-        if (activePlayer.landmarks.any { it.name == landmark.name && it.isBuilt }) {
-            println("❌ Достопримечательность ${landmark.name} уже построена!")
+        if (!activePlayer.canBuildLandmark(landmark)) {
             return
         }
 
-        // Проверяем деньги
-        if (activePlayer.balance < landmark.cost) {
-            println("❌ Недостаточно монет для постройки ${landmark.name}!")
-            return
-        }
+        activePlayer.buildLandmark(landmark)
 
-        // Строим
-        activePlayer.deductCoins(landmark.cost)
-        val targetLandmark = activePlayer.landmarks.find { it.name == landmark.name }
-
-        if (targetLandmark != null) {
-            targetLandmark.isBuilt = true
-        } else {
-            // Если её не было в списке, добавляем построенную
-            landmark.isBuilt = true
-            activePlayer.landmarks.add(landmark)
-        }
-
-        println("🎉 УРА! Игрок ${activePlayer.name} построил достопримечательность: ${landmark.name}!")
-
-        // Проверка условия победы
+        // Проверка победы
         if (activePlayer.hasWon()) {
-            println("🏆 ИГРА ОКОНЧЕНА! Победитель: ${activePlayer.name}! 🏆")
             updateState { it.copy(winner = activePlayer) }
         } else {
             nextTurn()

@@ -13,13 +13,13 @@ class EngineIntegrationTest {
         val bob = Player(name = "Боб", balance = 1)
 
         // Алиса владеет Кафе (красная, забирает 2 монеты, работает на 3)
-        alice.establishments.add(
+        alice.giveEstablishment(
             Establishment(
                 "Кафе", 2, listOf(3), CardColor.RED, RedIncomeStrategy(2)
             )
         )
         // Боб владеет Пекарней (зеленая, дает 1 монету, работает на 3)
-        bob.establishments.add(
+        bob.giveEstablishment(
             Establishment(
                 "Пекарня", 1, listOf(3), CardColor.GREEN, GreenIncomeStrategy(1)
             )

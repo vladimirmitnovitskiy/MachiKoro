@@ -8,7 +8,7 @@ enum class CardColor(val priority: Int) {
     PURPLE(3)  // Спец-эффекты (срабатывают последними)
 }
 
-// Базовый класс для всех карт (как на твоей UML)
+// Базовый класс для всех карт
 abstract class Card(
     val name: String,
     val cost: Int
@@ -27,5 +27,8 @@ class Establishment(
 class Landmark(
     name: String,
     cost: Int,
-    var isBuilt: Boolean = false
-) : Card(name, cost)
+    isBuilt: Boolean = false
+) : Card(name, cost) {
+    var isBuilt: Boolean = isBuilt
+        internal set
+}

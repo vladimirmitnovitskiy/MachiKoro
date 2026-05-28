@@ -11,6 +11,9 @@ class Market(initialDeck: List<Establishment>) {
     private val _availableCards = mutableListOf<Establishment>()
     val availableCards: List<Establishment> get() = _availableCards.toList()
 
+    val uniqueAvailableCards: List<Establishment>
+        get() = _availableCards.distinctBy { it.name }
+
     init {
         // При создании игры сразу выкладываем стартовые карты на стол
         replenishMarket()

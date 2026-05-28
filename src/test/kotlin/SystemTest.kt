@@ -1,27 +1,42 @@
 import application.*
 import domain.*
-import org.junit.jupiter.api.Test
+import infrastructure.SQLiteMatchRepository
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Test
+import java.io.File
 
 class SystemTest {
 
+    private val testDbFile = "test_system.db"
+    private val repository = SQLiteMatchRepository("jdbc:sqlite:$testDbFile")
+
+    @AfterEach
+    fun cleanUp() {
+        val file = File(testDbFile)
+        if (file.exists()) file.delete()
+    }
+
     @Test
-    fun `Full game simulation until a player wins`() {
-        val player1 = Player(name = "Игрок 1", balance = 100)
-        val player2 = Player(name = "Игрок 2", balance = 100)
+    fun `Full game simulation with Database integration until a player wins`() {
+        // 1. Игроки создаются через БД, чтобы получить реальные UUID
+        val p1 = repository.getOrCreatePlayer("Системный Игрок 1")
+        val p2 = repository.getOrCreatePlayer("Системный Игрок 2")
 
+        // Дадим много денег для скорости
+        val player1 = Player(id = p1.id, name = p1.name, balance = 100)
+        val player2 = Player(id = p2.id, name = p2.name, balance = 100)
+
+        // 2. Создаем игру ОБЕРНУТУЮ В ДЕКОРАТОР
         val factory = ClassicGameFactory()
-        val engine = factory.createGame(listOf(player1, player2))
-
-        // Симулируем ходы, пока кто-то не победит
-        // Игрок 1 просто строит достопримечательности каждый свой ход
+        val engine = EngineDbDecorator(factory.createGame(listOf(player1, player2)), repository)
 
         var safetyCounter = 0
+        // 3. Симулируем ходы, пока кто-то не победит
         while (engine.stateFlow.value.winner == null && safetyCounter < 50) {
             val state = engine.stateFlow.value
             engine.rollDice()
 
-            // Пытаемся найти непостроенную достопримечательность
             val unbuilt = state.activePlayer.landmarks.firstOrNull { !it.isBuilt }
             if (unbuilt != null) {
                 engine.buildLandmark(unbuilt)
@@ -31,9 +46,17 @@ class SystemTest {
             safetyCounter++
         }
 
+        // 4. ПРОВЕРКИ
         val finalState = engine.stateFlow.value
-        assertNotNull(finalState.winner, "Игра должна закончиться победой одного из игроков")
-        assertEquals(4, finalState.winner?.landmarks?.count { it.isBuilt }, "У победителя должно быть 4 достопримечательности")
-        println("Системный тест пройден: Победил ${finalState.winner?.name} за $safetyCounter полуходов.")
+        assertNotNull(finalState.winner, "Игра должна закончиться победой")
+
+        // РАСШИРЕНИЕ: Проверяем, что БД отработала корректно после победы!
+        val history = repository.loadMatchHistory()
+        assertEquals(1, history.size, "Матч должен быть сохранен в историю")
+        assertFalse(history[0].isAborted, "Матч не прерван, а завершен победой")
+        assertTrue(history[0].winnerName.contains(finalState.winner!!.name), "Имя победителя должно быть в логах")
+
+        val updatedWinnerProfile = repository.getOrCreatePlayer(finalState.winner!!.name)
+        assertEquals(1, updatedWinnerProfile.totalWins, "У победителя должна прибавиться 1 победа в базе")
     }
 }

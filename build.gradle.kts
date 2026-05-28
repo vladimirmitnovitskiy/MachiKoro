@@ -1,5 +1,6 @@
 plugins {
-    kotlin("jvm") version "2.3.21"
+    kotlin("jvm") version "1.9.23"
+    id("org.jetbrains.compose") version "1.6.10"
 }
 
 group = "org.example"
@@ -7,15 +8,20 @@ version = "1.0-SNAPSHOT"
 
 repositories {
     mavenCentral()
+    google()
+    maven("https://maven.pkg.jetbrains.space/public/p/compose/dev")
 }
 
 dependencies {
-    testImplementation(kotlin("test"))
-    // Корутины нужны для StateFlow в движке игры
+    // Корутины
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.0")
 
-    // Библиотеки для написания тестов (JUnit 5 + MockK)
+    implementation(compose.desktop.currentOs)
+    implementation(compose.material)
+
+    // Тесты
     testImplementation(kotlin("test"))
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     testImplementation("org.junit.jupiter:junit-jupiter:5.10.2")
     testImplementation("io.mockk:mockk:1.13.10")
 }

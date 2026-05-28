@@ -36,7 +36,8 @@ class LocalPlayerRegistry(private val fileName: String = "players_registry.csv")
     // Сохраняем или обновляем профиль
     fun saveProfile(profile: PlayerProfile) {
         val existing = loadProfiles().toMutableList()
-        val index = existing.indexOfFirst { it.name == profile.name } // Ищем по имени
+
+        val index = existing.indexOfFirst { it.id == profile.id } // Ищем по id
 
         if (index >= 0) {
             existing[index] = profile // Обновляем существующего

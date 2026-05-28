@@ -10,16 +10,17 @@ class ClassicGameFactory : IGameFactory {
     override fun createGame(players: List<Player>): IGameEngine {
         // Каждому игроку на старте даем Пшеничное поле и Пекарню (по правилам Мачи Коро)
         players.forEach { player ->
-            player.establishments.clear() // очищаем на всякий случай
-            player.establishments.add(createWheatField())
-            player.establishments.add(createBakery())
+            player.clearEstablishments()
+            player.giveEstablishment(createWheatField())
+            player.giveEstablishment(createBakery())
 
-            // Также добавляем им непостроенные Достопримечательности (цель игры - 4 шт)
-            player.landmarks.clear()
-            player.landmarks.add(Landmark("Вокзал", 4))
-            player.landmarks.add(Landmark("Торговый Центр", 10))
-            player.landmarks.add(Landmark("Парк Развлечений", 16))
-            player.landmarks.add(Landmark("Радиовышка", 22))
+            val initialLandmarks = listOf(
+                Landmark(name = "Вокзал", cost = 4),
+                Landmark(name = "Торговый Центр", cost = 10),
+                Landmark(name = "Парк Развлечений", cost = 16),
+                Landmark(name = "Радиовышка", cost = 22)
+            )
+            player.setInitialLandmarks(initialLandmarks)
         }
 
         // Генерируем общий рынок (по несколько копий каждой карты)

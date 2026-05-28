@@ -64,7 +64,7 @@ fun showShopMenu(engine: application.IGameEngine) {
     if (state.winner != null) return
 
     println("\n--- РЫНОК ---")
-    val uniqueCards = state.market.availableCards.distinctBy { it.name }
+    val uniqueCards = state.market.uniqueAvailableCards
     uniqueCards.forEachIndexed { index, card ->
         println("${index + 1}. Купить '${card.name}' (Цена: ${card.cost}, Кубик: ${card.activationNumbers})")
     }

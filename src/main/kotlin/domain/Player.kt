@@ -5,9 +5,9 @@ import java.util.UUID
 class Player(
     val id: UUID = UUID.randomUUID(),
     val name: String,
-    initialBalance: Int = 3
+    balance: Int = 3
 ) {
-    var balance: Int = initialBalance
+    var balance: Int = balance
         private set
 
     private val _establishments = mutableListOf<Establishment>()
@@ -58,5 +58,13 @@ class Player(
     fun setInitialLandmarks(initial: List<Landmark>) {
         _landmarks.clear()
         _landmarks.addAll(initial)
+    }
+
+    fun clearEstablishments() {
+        _establishments.clear()
+    }
+
+    fun giveEstablishment(card: Establishment) {
+        _establishments.add(card)
     }
 }

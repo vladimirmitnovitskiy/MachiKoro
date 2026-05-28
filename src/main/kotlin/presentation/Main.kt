@@ -1,14 +1,56 @@
 package presentation
 
 import application.ClassicGameFactory
+import application.IGameEngine
 import domain.Player
+
+// 1. Изолированный класс - все возможные команды
+sealed class GameCommand {
+    object RollDice : GameCommand()
+    object PassTurn : GameCommand()
+    object Exit : GameCommand()
+    data class BuyEstablishment(val index: Int) : GameCommand()
+    data class BuildLandmark(val index: Int) : GameCommand()
+    data class Invalid(val reason: String) : GameCommand()
+}
+
+// 2. Валидатор запросов
+class CommandValidator(
+    private val marketCardsCount: Int,
+    private val landmarksCount: Int
+) {
+    fun parse(input: String?): GameCommand {
+        val raw = input?.trim()?.lowercase()
+        if (raw.isNullOrEmpty()) return GameCommand.Invalid("Пустой ввод")
+
+        // Базовые команды
+        when (raw) {
+            "1" -> return GameCommand.RollDice
+            "0" -> return GameCommand.PassTurn
+            "exit", "quit", "выход" -> return GameCommand.Exit
+        }
+
+        val number = raw.toIntOrNull() ?: return GameCommand.Invalid("Неизвестная команда: $raw")
+
+        if (number in 1..marketCardsCount) {
+            return GameCommand.BuyEstablishment(number - 1)
+        }
+
+        val landmarkIndex = number - marketCardsCount - 1
+        if (landmarkIndex in 0 until landmarksCount) {
+            return GameCommand.BuildLandmark(landmarkIndex)
+        }
+
+        return GameCommand.Invalid("Число вне диапазона доступных покупок")
+    }
+}
 
 fun main() {
     println("=====================================")
     println("      ДОБРО ПОЖАЛОВАТЬ В МАЧИ КОРО     ")
     println("=====================================")
 
-    // Фаза Лобби (ввод игроков)
+    // Фаза Лобби
     val players = mutableListOf<Player>()
     println("Введите имена игроков (введите 'start' для начала игры):")
     while (true) {
@@ -42,24 +84,25 @@ fun main() {
         println("0. Выйти из игры")
         print("> ")
 
-        val choice = readlnOrNull()?.trim()
+        val validator = CommandValidator(marketCardsCount = 0, landmarksCount = 0)
 
-        when (choice) {
-            "1" -> {
+        when (val command = validator.parse(readlnOrNull())) {
+            is GameCommand.RollDice -> {
                 engine.rollDice()
                 showShopMenu(engine)
             }
-            "0", "exit", "quit", "выход" -> {
+            // В главном меню "0" и текстовые команды выхода ведут к завершению
+            is GameCommand.PassTurn, is GameCommand.Exit -> {
                 engine.abortGame()
                 break
             }
-            else -> println("Неверная команда.")
+            is GameCommand.Invalid -> println("❌ ${command.reason}")
+            else -> println("❌ Сейчас это действие недоступно.")
         }
     }
 }
 
-// Меню магазина после броска
-fun showShopMenu(engine: application.IGameEngine) {
+fun showShopMenu(engine: IGameEngine) {
     val state = engine.stateFlow.value
     if (state.winner != null) return
 
@@ -78,22 +121,32 @@ fun showShopMenu(engine: application.IGameEngine) {
     println("0. Ничего не покупать (передать ход)")
 
     print("Что берём? > ")
-    val choice = readlnOrNull()?.toIntOrNull()
 
-    if (choice == 0 || choice == null) {
-        engine.passTurn()
-        return
-    }
+    val validator = CommandValidator(
+        marketCardsCount = uniqueCards.size,
+        landmarksCount = unbuiltLandmarks.size
+    )
 
-    if (choice <= uniqueCards.size) {
-        val cardToBuy = uniqueCards[choice - 1]
-        engine.buyEstablishment(cardToBuy)
-    } else {
-        val landmarkIndex = choice - uniqueCards.size - 1
-        if (landmarkIndex < unbuiltLandmarks.size) {
-            engine.buildLandmark(unbuiltLandmarks[landmarkIndex])
-        } else {
-            println("❌ Неверный номер достопримечательности.")
+    when (val command = validator.parse(readlnOrNull())) {
+        is GameCommand.BuyEstablishment -> {
+            engine.buyEstablishment(uniqueCards[command.index])
+        }
+        is GameCommand.BuildLandmark -> {
+            engine.buildLandmark(unbuiltLandmarks[command.index])
+        }
+        is GameCommand.PassTurn -> {
+            engine.passTurn()
+        }
+        is GameCommand.Exit -> {
+            engine.abortGame()
+        }
+        is GameCommand.Invalid -> {
+            println("❌ ${command.reason}. Вы пропускаете ход из-за ошибки.")
+            engine.passTurn()
+        }
+        else -> {
+            println("❌ Неизвестная команда.")
+            engine.passTurn()
         }
     }
 }

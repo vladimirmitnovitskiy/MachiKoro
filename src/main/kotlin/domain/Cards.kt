@@ -27,5 +27,8 @@ class Establishment(
 class Landmark(
     name: String,
     cost: Int,
-    var isBuilt: Boolean = false
-) : Card(name, cost)
+    isBuilt: Boolean = false
+) : Card(name, cost) {
+    var isBuilt: Boolean = isBuilt
+        internal set
+}
